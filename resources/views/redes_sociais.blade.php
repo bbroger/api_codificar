@@ -12,7 +12,7 @@
 				<thead>
 					<tr>
 						<th scope="col">REDE SOCIAL</th>
-						<th scope="col">Deputados Inscritos</th>
+						<th scope="col">DEPUTADOS INSCRITOS</th>
 					</tr>
 				</thead>
 				<tbody>
