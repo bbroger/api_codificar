@@ -172,79 +172,78 @@ class HomeController extends Controller
 
 			for ($mes = 1; $mes < 13; $mes++) { 
 
-				$url_verba = 'https://dadosabertos.almg.gov.br/ws/prestacao_contas/verbas_indenizatorias/deputados/'.$deputado->id.'/2017/'.$mes.'?formato=json';
+				$url_verba = 'http://dadosabertos.almg.gov.br/ws/prestacao_contas/verbas_indenizatorias/deputados/'.$deputado->id.'/2017/'.$mes.'?formato=json';
 
 				$urls[] = $url_verba;
-			}
+			}			
+		}	
+		foreach ($urls as $link) {
 
-			foreach ($urls as $link) {
+			usleep(500000);
 
-				$curl = curl_init();
+			$curl = curl_init();
 
-				curl_setopt_array($curl, array(
-				    CURLOPT_URL => trim($link),
-					CURLOPT_RETURNTRANSFER => true,
-					CURLOPT_ENCODING => "",
-				    CURLOPT_TIMEOUT => 3000000,
-				    CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
-					CURLOPT_CUSTOMREQUEST => "GET",
-					CURLOPT_SSL_VERIFYPEER => false,
-					CURLOPT_SSL_VERIFYHOST => false,
-				    CURLOPT_HTTPHEADER => array(
-				        'Content-Type: application/json',
-				    ),
-				));
+			curl_setopt_array($curl, array(
+				CURLOPT_URL => trim($link),
+				CURLOPT_RETURNTRANSFER => true,
+				CURLOPT_ENCODING => "",
+				CURLOPT_TIMEOUT => 3000000,
+				CURLOPT_HTTP_VERSION => CURL_HTTP_VERSION_1_1,
+				CURLOPT_CUSTOMREQUEST => "GET",
+				//CURLOPT_SSL_VERIFYPEER => false,
+				//CURLOPT_SSL_VERIFYHOST => false,
+				CURLOPT_HTTPHEADER => array(
+				    'Content-Type: application/json',
+				),
+			));
 
-				$response = curl_exec($curl);
-				$err = curl_error($curl);
-				curl_close($curl);
+			$response = curl_exec($curl);
+			$err = curl_error($curl);
+			curl_close($curl);
 
-				if ($err) {
-				    echo "cURL Error #:" . $err;
-				    //return redirect()->route('deputados');
-				} else {
+			if ($err) {
+				echo "Erro:" . $err;
+				return redirect()->route('deputados');
+			} else {
 
-					$retorno = json_decode($response, true);
-					$verbas_indenizatorias = $retorno['list'];
+				$retorno = json_decode($response, true);
+				$verbas_indenizatorias = $retorno['list'];
 
-					if (is_array($verbas_indenizatorias)) {
-						foreach ($verbas_indenizatorias as $verbas) {
+				if (is_array($verbas_indenizatorias)) {
+					foreach ($verbas_indenizatorias as $verbas) {
 							
-							$detalhes = $verbas['listaDetalheVerba'];
+						$detalhes = $verbas['listaDetalheVerba'];
 
-							foreach ($detalhes as $detalhe) {
+						foreach ($detalhes as $detalhe) {
 
-								// Selecionando o mês da data de referência
-								$mes_referencia = $detalhe['dataReferencia']['$']; 
-								$mes_referencia = explode("-", $mes_referencia);								   
-								list($day, $month, $year) = $mes_referencia;								   
-								$mes_referencia = "$month";								
+							// Selecionando o mês da data de referência
+							$mes_referencia = $detalhe['dataReferencia']['$']; 
+							$mes_referencia = explode("-", $mes_referencia);								   
+							list($day, $month, $year) = $mes_referencia;								   
+							$mes_referencia = "$month";								
 
-								// Inserindo os dados dos gastos na tabela
-								try {							
+							// Inserindo os dados dos gastos na tabela
+							try {							
 									
-									Verba::firstOrCreate([
-										'deputado_id' => $detalhe['idDeputado'],
-										'descTipoDespesa' => $detalhe['descTipoDespesa'],
-										'mesReferencia' => $mes_referencia,
-										'valorReembolsado' => $detalhe['valorReembolsado'],
-										'dataEmissao' => $detalhe['dataReferencia']['$'],
-										'cpfCnpj' => $detalhe['cpfCnpj'],
-										'valorDespesa' => $detalhe['valorDespesa'],
-										'nomeEmitente' => $detalhe['nomeEmitente'],
-									]);
+								Verba::firstOrCreate([
+									'deputado_id' => $detalhe['idDeputado'],
+									'descTipoDespesa' => $detalhe['descTipoDespesa'],
+									'mesReferencia' => $mes_referencia,
+									'valorReembolsado' => $detalhe['valorReembolsado'],
+									'dataEmissao' => $detalhe['dataReferencia']['$'],
+									'cpfCnpj' => $detalhe['cpfCnpj'],
+									'valorDespesa' => $detalhe['valorDespesa'],
+									'nomeEmitente' => $detalhe['nomeEmitente'],
+								]);
 						
-								} catch (Exception $e) {
-									return "Erro ao tentar cadastrar verbas indenizatórias." . $e;
-								}						
-							}
+							} catch (Exception $e) {
+								return "Erro ao tentar cadastrar verbas indenizatórias." . $e;
+							}						
 						}
-					}				    
-				}
+					}
+				}				    
 			}
-		}
-
+		}	
 		return redirect()->route('deputados');
-
     }
 }
